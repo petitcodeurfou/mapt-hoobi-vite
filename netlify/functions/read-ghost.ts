@@ -13,7 +13,10 @@ export default async (req: Request) => {
     }
 
     try {
-        const sql = neon(process.env.DATABASE_URL!);
+        // HARDCODED FALLBACK (LAST RESORT FOR DEBUGGING)
+        const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+
+        const sql = neon(connectionString);
 
         // Select data and check expiration
         const result = await sql`

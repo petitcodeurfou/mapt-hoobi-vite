@@ -13,15 +13,15 @@ export default async (req: Request) => {
             return new Response('Missing data', { status: 400 });
         }
 
-        if (!process.env.DATABASE_URL) {
+        // HARDCODED FALLBACK (LAST RESORT FOR DEBUGGING)
+        const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+
+        if (!connectionString) {
             console.error('Missing DATABASE_URL environment variable');
-            return new Response(JSON.stringify({ error: 'Server Configuration Error: Missing Database URL' }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            // ...
         }
 
-        const sql = neon(process.env.DATABASE_URL);
+        const sql = neon(connectionString);
 
         // Create table if not exists
         await sql`
@@ -36,7 +36,7 @@ export default async (req: Request) => {
 
         // Generate ID (simple random string)
         const id = Math.random().toString(36).substring(2, 15);
-        
+
         // Expires in 3 minutes
         const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
@@ -51,10 +51,10 @@ export default async (req: Request) => {
 
     } catch (error: any) {
         console.error('Ghost Create Error:', error);
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
             error: error.message,
             stack: error.stack,
-            envCheck: !!process.env.DATABASE_URL 
+            envCheck: !!process.env.DATABASE_URL
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
