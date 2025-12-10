@@ -15,7 +15,8 @@ export default async (req: Request) => {
     try {
         // HARDCODED FALLBACK (LAST RESORT FOR DEBUGGING)
         // We ignore process.env.DATABASE_URL to ensure no typos from the dashboard interfere
-        const connectionString = "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+        // REMOVED channel_binding=require as it can cause auth failures in some envs
+        const connectionString = "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=require";
 
         const sql = neon(connectionString);
 
