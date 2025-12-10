@@ -3,7 +3,7 @@ import { neon } from '@neondatabase/serverless';
 export default async (req: Request) => {
     try {
         // HARDCODED STRING - EXACTLY AS IN create-ghost.ts
-        const connectionString = "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+        const connectionString = "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=no-verify";
 
         const sql = neon(connectionString);
 

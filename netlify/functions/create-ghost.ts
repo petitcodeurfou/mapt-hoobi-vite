@@ -17,7 +17,8 @@ export default async (req: Request) => {
         // HARDCODED FALLBACK (LAST RESORT FOR DEBUGGING)
         // We ignore process.env.DATABASE_URL to ensure no typos from the dashboard interfere
         // REMOVED channel_binding=require as it can cause auth failures in some envs
-        const connectionString = "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=require";
+        // CHANGED sslmode=require to sslmode=no-verify to bypass CA cert issues in serverless
+        const connectionString = "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908-pooler.eastus2.azure.neon.tech/neondb?sslmode=no-verify";
 
         if (!connectionString) {
             console.error('Missing DATABASE_URL environment variable');
