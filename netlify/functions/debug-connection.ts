@@ -2,9 +2,8 @@ import { neon } from '@neondatabase/serverless';
 
 export default async (req: Request) => {
     try {
-        // HARDCODED STRING - DIRECT CONNECTION (NO POOLER)
-        // Guessing host by removing '-pooler'
-        const connectionString = "postgresql://neondb_owner:npg_ejvH9Q1lXfka@ep-little-heart-a8001908.eastus2.azure.neon.tech/neondb?sslmode=require";
+        // HARDCODED STRING - NEW CREDENTIALS FROM USER - 2025-12-10
+        const connectionString = "postgresql://neondb_owner:npg_ejvH7QTzxYA9@ep-autumn-mode-af4q8mas-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require";
 
         const sql = neon(connectionString);
 
