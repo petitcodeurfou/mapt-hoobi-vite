@@ -74,6 +74,7 @@ export function Vault() {
     const [content, setContent] = useState('');
     const [status, setStatus] = useState('');
     const [key, setKey] = useState<CryptoKey | null>(null);
+    const [copied, setCopied] = useState(false);
 
     // Check URL for ID on load
     useEffect(() => {
@@ -92,10 +93,10 @@ export function Vault() {
         if (mode !== 'EDITOR' || !noteId || !key) return;
 
         const save = async () => {
-            setStatus('Saving...');
+            setStatus('Chiffrement...');
             try {
                 const encrypted = await encryptData(content, key);
-                const authHash = await hashPassword(password); // Re-hash for verification
+                const authHash = await hashPassword(password);
 
                 const res = await fetch('/.netlify/functions/vault-update', {
                     method: 'POST',
@@ -103,23 +104,23 @@ export function Vault() {
                 });
 
                 if (!res.ok) throw new Error('Save failed');
-                setStatus('Saved');
+                setStatus('Sauvegardé ✓');
                 setTimeout(() => setStatus(''), 2000);
             } catch (e) {
-                setStatus('Error saving');
+                setStatus('Erreur de sauvegarde');
             }
         };
 
-        const timeout = setTimeout(save, 1000); // Debounce 1s
+        const timeout = setTimeout(save, 1000);
         return () => clearTimeout(timeout);
-    }, [content, noteId, key, mode]);
+    }, [content, noteId, key, mode, password]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setMode('LOADING');
         try {
             const derivedKey = await deriveKey(password);
-            const encrypted = await encryptData("", derivedKey); // Empty init
+            const encrypted = await encryptData("", derivedKey);
             const authHash = await hashPassword(password);
 
             const res = await fetch('/.netlify/functions/vault-create', {
@@ -134,7 +135,6 @@ export function Vault() {
             setKey(derivedKey);
             setMode('EDITOR');
 
-            // Update URL without reload
             const newUrl = `${window.location.pathname}?id=${data.id}`;
             window.history.pushState({ path: newUrl }, '', newUrl);
 
@@ -156,9 +156,8 @@ export function Vault() {
 
             const data = await res.json();
 
-            // Verify hash locally (optional, but good for UX before decrypt fail)
             if (data.auth_hash !== authHash) {
-                throw new Error('Incorrect Password');
+                throw new Error('Mot de passe incorrect');
             }
 
             const decrypted = await decryptData(data.content, derivedKey);
@@ -173,28 +172,57 @@ export function Vault() {
         }
     };
 
+    const copyLink = () => {
+        navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-gray-200 font-sans flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-[#050505] text-white font-sans relative overflow-hidden">
 
-            {/* Background Grid */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+            {/* Ambient Background Effects */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-cyan-500/10 blur-[150px] rounded-full" />
+                <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/10 blur-[120px] rounded-full" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+            </div>
 
-            <div className="relative z-10 w-full max-w-2xl">
+            <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6">
 
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-12 bg-cyan-900/20 rounded-xl flex items-center justify-center border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-cyan-400">
+                <motion.header
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-12 text-center"
+                >
+                    <div className="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/10 shadow-2xl shadow-cyan-500/10 backdrop-blur-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-cyan-400">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                         </svg>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">VAULT</h1>
-                        <p className="text-xs text-cyan-500/60 uppercase tracking-widest font-medium">Secure Encrypted Storage</p>
-                    </div>
-                </div>
+                    <h1 className="text-5xl font-bold tracking-tight mb-3 bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent">
+                        VAULT
+                    </h1>
+                    <p className="text-white/30 text-sm tracking-[0.3em] uppercase font-medium">
+                        Secure • Encrypted • Private
+                    </p>
+                </motion.header>
 
                 <AnimatePresence mode="wait">
+
+                    {/* LOADING */}
+                    {mode === 'LOADING' && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="flex flex-col items-center"
+                        >
+                            <div className="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+                            <p className="mt-4 text-white/40 text-sm">Chargement...</p>
+                        </motion.div>
+                    )}
 
                     {/* SETUP MODE */}
                     {mode === 'SETUP' && (
@@ -203,27 +231,43 @@ export function Vault() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                             onSubmit={handleCreate}
-                            className="bg-[#111] p-8 rounded-2xl border border-white/5 shadow-2xl"
+                            className="w-full max-w-md bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl"
                         >
-                            <h2 className="text-xl font-medium text-white mb-2">Create New Vault</h2>
-                            <p className="text-gray-500 text-sm mb-6">Set a strong password. This password is the ONLY way to decrypt your data. If you lose it, your data is lost forever.</p>
+                            <div className="text-center mb-8">
+                                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-cyan-500/20">
+                                    <span className="text-3xl">🔐</span>
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-2">Créer un Vault</h2>
+                                <p className="text-white/40 text-sm">Vos données seront chiffrées avec votre mot de passe. <span className="text-red-400">Ne le perdez jamais.</span></p>
+                            </div>
 
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Set Master Password"
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all mb-4"
-                                autoFocus
-                            />
+                            <div className="relative mb-6">
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Mot de passe maître"
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/30 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all text-lg"
+                                    autoFocus
+                                />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                                    </svg>
+                                </div>
+                            </div>
 
                             <button
                                 type="submit"
-                                disabled={!password}
-                                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={!password || password.length < 4}
+                                className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20 text-lg"
                             >
-                                Initialize Vault
+                                Initialiser le Vault
                             </button>
+
+                            <p className="text-center text-white/20 text-xs mt-6">
+                                Chiffrement AES-256-GCM • Zero-Knowledge
+                            </p>
                         </motion.form>
                     )}
 
@@ -234,32 +278,37 @@ export function Vault() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                             onSubmit={handleUnlock}
-                            className="bg-[#111] p-8 rounded-2xl border border-white/5 shadow-2xl text-center"
+                            className="w-full max-w-md bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl"
                         >
-                            <div className="w-16 h-16 bg-red-900/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-red-500">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                                </svg>
+                            <div className="text-center mb-8">
+                                <motion.div
+                                    animate={{ scale: [1, 1.05, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="w-20 h-20 bg-gradient-to-br from-red-500/20 to-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-red-400">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                                    </svg>
+                                </motion.div>
+                                <h2 className="text-2xl font-bold text-white mb-2">Vault Verrouillé</h2>
+                                <p className="text-white/40 text-sm">Entrez votre mot de passe pour déchiffrer ce vault.</p>
                             </div>
-
-                            <h2 className="text-xl font-medium text-white mb-2">Vault Locked</h2>
-                            <p className="text-gray-500 text-sm mb-6">Enter your master password to decrypt this note.</p>
 
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Enter Password"
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-red-500/50 focus:outline-none focus:ring-1 focus:ring-red-500/50 transition-all mb-4"
+                                placeholder="Mot de passe"
+                                className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/30 focus:border-red-500/50 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all mb-6 text-lg"
                                 autoFocus
                             />
 
                             <button
                                 type="submit"
                                 disabled={!password}
-                                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 rounded-lg transition-colors"
+                                className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-xl transition-all border border-white/10"
                             >
-                                Decrypt & Open
+                                Déverrouiller
                             </button>
                         </motion.form>
                     )}
@@ -269,30 +318,59 @@ export function Vault() {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="bg-[#111] rounded-2xl border border-white/5 shadow-2xl overflow-hidden h-[600px] flex flex-col"
+                            className="w-full max-w-3xl"
                         >
-                            <div className="bg-[#1a1a1a] px-4 py-2 border-b border-white/5 flex justify-between items-center">
-                                <div className="flex gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
-                                    <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
+                            {/* Toolbar */}
+                            <div className="flex justify-between items-center mb-4 px-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-white/40 text-sm font-medium">
+                                        {status || 'Prêt'}
+                                    </span>
                                 </div>
-                                <span className="text-xs font-mono text-gray-500">
-                                    {status || 'Ready'}
-                                </span>
+                                <button
+                                    onClick={copyLink}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-sm text-white/60 hover:text-white transition-all"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-green-400">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
+                                            Copié !
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                                            </svg>
+                                            Copier le lien
+                                        </>
+                                    )}
+                                </button>
                             </div>
 
-                            <textarea
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                className="flex-1 bg-transparent p-6 text-gray-300 font-mono text-sm resize-none focus:outline-none leading-relaxed"
-                                placeholder="Start typing... content is encrypted automatically."
-                                spellCheck={false}
-                            />
+                            {/* Editor Card */}
+                            <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+                                <textarea
+                                    value={content}
+                                    onChange={(e) => setContent(e.target.value)}
+                                    className="w-full h-[500px] bg-transparent p-8 text-white text-lg leading-relaxed resize-none focus:outline-none placeholder-white/40"
+                                    placeholder="Commencez à écrire... Tout est chiffré automatiquement."
+                                    spellCheck={false}
+                                />
 
-                            <div className="bg-[#1a1a1a] px-4 py-2 border-t border-white/5 text-xs text-gray-600 flex justify-between">
-                                <span>AES-256-GCM Encrypted</span>
-                                <span className="font-mono truncate max-w-[200px] opacity-50">ID: {noteId}</span>
+                                <div className="bg-black/30 px-6 py-3 border-t border-white/5 flex justify-between items-center">
+                                    <div className="flex items-center gap-2 text-white/20 text-xs">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                                        </svg>
+                                        AES-256-GCM
+                                    </div>
+                                    <span className="text-white/10 text-xs font-mono truncate max-w-[200px]">
+                                        {noteId?.slice(0, 8)}...
+                                    </span>
+                                </div>
                             </div>
                         </motion.div>
                     )}
