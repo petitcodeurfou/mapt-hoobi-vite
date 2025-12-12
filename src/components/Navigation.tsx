@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UserButton } from '@clerk/clerk-react';
 
 // Import Icons
 import iconHome from '../assets/icons/home.png';
@@ -52,7 +53,7 @@ export function Navigation() {
     ];
 
     return (
-        <nav className="fixed top-0 right-0 z-50 p-6 flex justify-end items-start pointer-events-none">
+        <nav className="fixed top-0 right-0 z-50 p-6 flex justify-end items-center gap-6 pointer-events-none">
             <div className="pointer-events-auto relative" ref={menuRef}>
                 {/* App Launcher Icon (9 dots) */}
                 <button
@@ -132,6 +133,17 @@ export function Navigation() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </div>
+
+            {/* User Account Button - à droite du menu */}
+            <div className="pointer-events-auto" style={{ marginLeft: '1cm' }}>
+                <UserButton
+                    appearance={{
+                        elements: {
+                            avatarBox: "w-10 h-10"
+                        }
+                    }}
+                />
             </div>
         </nav>
     );

@@ -355,7 +355,7 @@ export function Vault() {
                                 <textarea
                                     value={content}
                                     onChange={(e) => setContent(e.target.value)}
-                                    className="w-full h-[500px] bg-transparent p-8 text-white text-lg leading-relaxed resize-none focus:outline-none placeholder-white/40"
+                                    className="w-full h-[500px] bg-black/60 p-8 text-white text-lg leading-relaxed resize-none focus:outline-none placeholder-white/50"
                                     placeholder="Commencez à écrire... Tout est chiffré automatiquement."
                                     spellCheck={false}
                                 />
