@@ -8,6 +8,7 @@ import iconHome from '../assets/icons/home.png';
 import iconGhost from '../assets/icons/ghost.png';
 import iconAI from '../assets/icons/ai.png';
 import iconVault from '../assets/icons/vault.png';
+import iconMessages from '../assets/icons/messages.png';
 
 export function Navigation() {
     const [isOpen, setIsOpen] = useState(false);
@@ -42,6 +43,13 @@ export function Navigation() {
             path: '/vault',
             aria: 'Secure Vault',
             image: iconVault,
+        },
+        {
+            id: 'messages',
+            path: '/messages',
+            aria: 'Messages',
+            image: iconMessages,
+            experimental: true
         },
         {
             id: 'ai',
